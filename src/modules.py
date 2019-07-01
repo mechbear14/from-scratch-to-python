@@ -5,6 +5,8 @@ from random import randint
 from PIL import ImageTk, Image
 import json
 
+from utility import *
+
 
 class ClockModule:
     def __init__(self, canvas, x, y, w, h):
@@ -79,3 +81,58 @@ class GalleryModule:
         self.update()
         self.render()
         self.canvas.after(60000, self.mainloop)
+
+
+class StarModule:
+    def __init__(self, canvas, x, y, w, h, p):
+        self.canvas = canvas
+        self.x, self.y, self.w, self.h, self.p = x, y, w, h, p
+        self.stars = []
+        self.star_refs = []
+        for i in range(0, 100):
+            sx, sy, sz = randint(0, w), randint(0, h), randint(-p, 0)
+            star = Star(sx, sy, sz, 50)
+            self.stars.append(star)
+            render_loc = self.offset(*get_2d(sx, sy, sz, self.w, self.h, self.p))
+            scaled_r = get_scaled_r(star.r, sz, self.p)
+            ref = self.canvas.create_oval(*get_circle(*render_loc, scaled_r), fill="#ffffff", width=0)
+            self.star_refs.append(ref)
+        self.mainloop()
+
+    def offset(self, x, y):
+        return self.x + x, self.y + y
+
+    def update(self):
+        for star in self.stars:
+            star.set(z=star.z + star.v)
+            if star.z > 0:
+                star.x, star.y = randint(0, self.w), randint(0, self.h)
+                star.z = -self.p
+
+    def render(self):
+        for i, star in enumerate(self.stars):
+            render_loc = self.offset(*get_2d(star.x, star.y, star.z, self.w, self.h, self.p))
+            scaled_r = get_scaled_r(star.r, star.z, self.p)
+            self.canvas.coords(self.star_refs[i], get_circle(*render_loc, scaled_r))
+
+    def mainloop(self):
+        self.update()
+        self.render()
+        self.canvas.after(20, self.mainloop)
+
+
+class Star:
+    def __init__(self, x, y, z, v):
+        self.x, self.y, self.z, self.v = x, y, z, v
+        self.r = 4
+
+    def set(self, x=None, y=None, z=None):
+        if x is not None:
+            self.x = x
+        if y is not None:
+            self.y = y
+        if z is not None:
+            self.z = z
+
+    def get_loc(self):
+        return self.x, self.y, self.z
